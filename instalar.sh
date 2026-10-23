@@ -1174,18 +1174,6 @@ resumo_final() {
     item "Endereço" "https://$APP_HOST/setup"
     item "Primeiro acesso" "crie a sua conta de dono nesse link"
     fechar_bloco
-    if [ "$COM_EVOLUTION" = 1 ]; then
-        abrir_bloco "WHATSAPP (EVOLUTION API)" "$roxo"
-        item "Endereço" "https://$EVO_HOST"
-        item "Manager" "https://$EVO_HOST/manager"
-        item "API Key" "$EVOLUTION_API_KEY"
-        item "No sistema" "já cadastrada em Servidores de API"
-        fechar_bloco
-    else
-        abrir_bloco "WHATSAPP" "$roxo"
-        item "Próximo passo" "cadastre a sua Evolution ou UazAPI em Servidores de API"
-        fechar_bloco
-    fi
     if [ "$MODO_ROTA" = manual ]; then
         abrir_bloco "FALTA UM PASSO: CADASTRE OS ENDEREÇOS NO SEU PAINEL (COM HTTPS)" "$amarelo"
         item "$APP_HOST" "→ http://127.0.0.1:$PORTA_APP"

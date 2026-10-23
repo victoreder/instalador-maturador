@@ -1,7 +1,6 @@
 # Instalador Maturador
 
-Instala o **Maturador de Chip** numa VPS com um comando. São só 2 perguntas: o endereço do sistema e se quer a
-Evolution API junto.
+Instala o **Maturador de Chip** numa VPS com um comando. É só uma pergunta: o domínio.
 
 ## Comando (como root)
 
@@ -21,10 +20,10 @@ Rodar de novo **atualiza** o sistema. As respostas e senhas ficam em `/opt/matur
    | Traefik (Portainer, EasyPanel, Coolify, Dokploy...) | Usa o Traefik que já existe (labels ou arquivo de rotas), em stack no Swarm ou compose |
    | Outro proxy nas portas 80/443 (nginx...) | Sobe em portas locais e mostra o que cadastrar no painel |
 
-2. **Pergunta o endereço** (ex.: `maturador.suaempresa.com.br`). Os outros são automáticos:
-   `s3.<endereço>` (arquivos) e `evo.<endereço>` (Evolution). Confere se o DNS já aponta para a VPS.
-3. **Pergunta se instala a Evolution API.** Se instalar, ela usa o mesmo Postgres (banco `evolution`) e o
-   mesmo Redis, e já entra no sistema como servidor de API (variáveis `EVOLUTION_URL`/`EVOLUTION_API_KEY`).
+2. **Pergunta o domínio** (ex.: `suaempresa.com.br`) e monta os endereços: `maturador.<domínio>` (sistema),
+   `s3.<domínio>` (arquivos) e `evo.<domínio>` (Evolution). Confere se o DNS já aponta para a VPS.
+3. **Instala a Evolution API** junto, usando o mesmo Postgres (banco `evolution`) e o mesmo Redis. Ela já entra
+   no sistema como servidor de API (variáveis `EVOLUTION_URL`/`EVOLUTION_API_KEY`).
 4. **Sobe tudo** em `/opt/maturador/maturador.yml`: sistema, Postgres 17, Redis 7 e MinIO, com senhas e `APP_KEY`
    aleatórias. O S3 também já vai configurado (`S3_*`).
 5. No fim mostra o link `https://<endereço>/setup` para criar a conta de dono.

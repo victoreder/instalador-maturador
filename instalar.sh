@@ -2,8 +2,8 @@
 
 ## ============================================================================
 ## INSTALADOR MATURADOR
-## Instala: Maturador de Chip (sistema + telas) com Postgres, Redis e MinIO (S3).
-## Opcional: Evolution API (WhatsApp), já cadastrada no sistema.
+## Instala: Maturador de Chip (sistema + telas) com Postgres, Redis, MinIO (S3)
+## e Evolution API (WhatsApp), já cadastrada no sistema. Pergunta só o domínio.
 ##
 ## Funciona em VPS zerada e em VPS que já tem outro sistema:
 ##   - VPS zerada ............... Docker + Caddy (HTTPS automático)
@@ -31,14 +31,14 @@ IMG_MINIO="ghcr.io/victoreder/minio:RELEASE.2024-01-13T07-53-03Z"
 IMG_EVOLUTION="evoapicloud/evolution-api:latest"
 IMG_CADDY="caddy:2-alpine"
 
-amarelo="\e[33m"
+amarelo="\e[91m"
 verde="\e[92m"
 branco="\e[97m"
 vermelho="\e[91m"
-## Paleta única em amarelo (verde e vermelho só para ✔ e ✘)
-ciano="\e[93m"
-azul="\e[33m"
-roxo="\e[33m"
+## Paleta única em vermelho (verde só para ✔)
+ciano="\e[91m"
+azul="\e[31m"
+roxo="\e[31m"
 cinza="\e[90m"
 negrito="\e[1m"
 reset="\e[0m"
@@ -55,7 +55,7 @@ trap 'rm -rf "$TMP"; printf "\e[?25h"' EXIT
 ## ============================================================================
 
 LARGURA=62
-NOMES_PASSOS=("Endereço" "WhatsApp")
+NOMES_PASSOS=("Domínio")
 TOTAL_PASSOS=${#NOMES_PASSOS[@]}
 QUADROS=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
 
@@ -88,12 +88,12 @@ digitar() { # digitar "texto" [cor]
 banner() {
     clear
     echo ""
-    echo -e "\e[93m  ███╗   ███╗ █████╗ ████████╗██╗   ██╗██████╗  █████╗ ██████╗  ██████╗ ██████╗ ${reset}"
-    echo -e "\e[93m  ████╗ ████║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔═══██╗██╔══██╗${reset}"
-    echo -e "\e[93m  ██╔████╔██║███████║   ██║   ██║   ██║██████╔╝███████║██║  ██║██║   ██║██████╔╝${reset}"
-    echo -e "\e[93m  ██║╚██╔╝██║██╔══██║   ██║   ██║   ██║██╔══██╗██╔══██║██║  ██║██║   ██║██╔══██╗${reset}"
-    echo -e "\e[93m  ██║ ╚═╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║██║  ██║██████╔╝╚██████╔╝██║  ██║${reset}"
-    echo -e "\e[93m  ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝${reset}"
+    echo -e "\e[91m  ███╗   ███╗ █████╗ ████████╗██╗   ██╗██████╗  █████╗ ██████╗  ██████╗ ██████╗ ${reset}"
+    echo -e "\e[91m  ████╗ ████║██╔══██╗╚══██╔══╝██║   ██║██╔══██╗██╔══██╗██╔══██╗██╔═══██╗██╔══██╗${reset}"
+    echo -e "\e[91m  ██╔████╔██║███████║   ██║   ██║   ██║██████╔╝███████║██║  ██║██║   ██║██████╔╝${reset}"
+    echo -e "\e[91m  ██║╚██╔╝██║██╔══██║   ██║   ██║   ██║██╔══██╗██╔══██║██║  ██║██║   ██║██╔══██╗${reset}"
+    echo -e "\e[91m  ██║ ╚═╝ ██║██║  ██║   ██║   ╚██████╔╝██║  ██║██║  ██║██████╔╝╚██████╔╝██║  ██║${reset}"
+    echo -e "\e[91m  ╚═╝     ╚═╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═╝  ╚═╝${reset}"
     echo -e "  ${cinza}$(linha 80 ━)${reset}"
     echo -e "  ${negrito}${branco}Instalador oficial${reset}  ${cinza}•  versão $VERSAO${reset}"
     echo ""
@@ -131,7 +131,7 @@ cabecalho_passo() {
     trilha "$1"
     echo ""
     titulo_caixa "PASSO $1 DE $TOTAL_PASSOS  ·  $2"
-    dica "Digite 0 e aperte Enter para voltar ao passo anterior."
+    [ "$TOTAL_PASSOS" -gt 1 ] && dica "Digite 0 e aperte Enter para voltar ao passo anterior."
     echo ""
 }
 
@@ -607,62 +607,43 @@ normalizar_dominio() {
     printf '%s' "$d"
 }
 
-## Endereços que o sistema usa (a Evolution só quando for instalada)
+## Endereços que o sistema usa
 enderecos() {
     echo "$APP_HOST"
     echo "$S3_HOST"
-    [ "${COM_EVOLUTION:-0}" = 1 ] && echo "$EVO_HOST"
-    return 0
+    echo "$EVO_HOST"
 }
 
-## ---------------------------------------------------------------- Passo 1: endereço
-passo_endereco() {
+## ---------------------------------------------------------------- Passo 1: domínio
+passo_dominio() {
     local d
     while :; do
-        cabecalho_passo 1 "ENDEREÇO"
-        texto "Em qual endereço o sistema vai ficar?"
-        dica "Exemplo: maturador.suaempresa.com.br  (sem https://)"
+        cabecalho_passo 1 "DOMÍNIO"
+        texto "Qual é o domínio da sua empresa?"
+        dica "Exemplo: suaempresa.com.br  (sem https:// e sem www)"
         echo ""
-        perguntar d "Endereço" "${APP_HOST:-}" || return 1
-        APP_HOST="$(normalizar_dominio "$d")"
-        [ "$APP_HOST" != "$(limpar "$d")" ] && dica "  Ajustei para: $APP_HOST"
-        if ! [[ "$APP_HOST" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
-            falha "Endereço inválido: $APP_HOST"
+        perguntar d "Domínio" "${DOMINIO:-}" || return 1
+        DOMINIO="$(normalizar_dominio "$d")"
+        [ "$DOMINIO" != "$(limpar "$d")" ] && dica "  Ajustei para: $DOMINIO"
+        if ! [[ "$DOMINIO" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]]; then
+            falha "Domínio inválido: $DOMINIO"
             enter
             continue
         fi
-        S3_HOST="s3.$APP_HOST"
-        EVO_HOST="evo.$APP_HOST"
-        return 0
-    done
-}
-
-## ---------------------------------------------------------------- Passo 2: WhatsApp
-passo_whatsapp() {
-    while :; do
-        cabecalho_passo 2 "WHATSAPP"
-        texto "Os chips se conectam por uma ${negrito}Evolution API${reset} ou ${negrito}UazAPI${reset}."
-        dica "Se você já tem uma, responda N e cadastre ela depois em Servidores de API."
-        dica "Respondendo S, instalamos uma Evolution nesta VPS e ela já entra no sistema."
-        echo ""
-        sim_nao "Instalar a Evolution API nesta VPS?" "$([ "${COM_EVOLUTION:-1}" = 1 ] && echo S || echo N)"
-        case $? in
-            0) COM_EVOLUTION=1 ;;
-            1) COM_EVOLUTION=0 ;;
-            2) return 1 ;;
-        esac
+        APP_HOST="maturador.$DOMINIO"
+        S3_HOST="s3.$DOMINIO"
+        EVO_HOST="evo.$DOMINIO"
         echo ""
         abrir_bloco "ENDEREÇOS QUE PRECISAM APONTAR PARA ESTA VPS" "$azul"
         item "Sistema" "$APP_HOST"
         item "Arquivos" "$S3_HOST"
-        [ "$COM_EVOLUTION" = 1 ] && item "WhatsApp" "$EVO_HOST"
+        item "WhatsApp" "$EVO_HOST"
         fechar_bloco
         verificar_dns && return 0
-        return 1
     done
 }
 
-## Retorna 0 = DNS ok (ou seguir mesmo assim), 1 = voltar e corrigir o endereço
+## Retorna 0 = DNS ok (ou seguir mesmo assim), 1 = voltar e corrigir o domínio
 verificar_dns() {
     local ip_vps tudo_ok resp h ip ips
     ip_vps="$(ip_da_vps)"
@@ -689,7 +670,7 @@ verificar_dns() {
         fechar_bloco
         dica "Usa Cloudflare? Deixe a nuvem cinza (\"somente DNS\"). Pode levar alguns minutos para valer."
         echo ""
-        printf '%b' "  ${branco}Enter${reset} conferir de novo  ${cinza}•${reset}  ${branco}C${reset} continuar assim  ${cinza}•${reset}  ${branco}0${reset} corrigir o endereço: "
+        printf '%b' "  ${branco}Enter${reset} conferir de novo  ${cinza}•${reset}  ${branco}C${reset} continuar assim  ${cinza}•${reset}  ${branco}0${reset} corrigir o domínio: "
         ler resp
         resp="$(limpar "$resp")"
         case "$resp" in
@@ -701,7 +682,7 @@ verificar_dns() {
 }
 
 assistente() {
-    local passos=(passo_endereco passo_whatsapp)
+    local passos=(passo_dominio)
     local i
     while :; do
         i=0
@@ -721,11 +702,7 @@ assistente() {
         abrir_bloco "O QUE VAI SER INSTALADO" "$azul"
         item "Sistema" "https://$APP_HOST"
         item "Arquivos" "https://$S3_HOST"
-        if [ "$COM_EVOLUTION" = 1 ]; then
-            item "WhatsApp" "https://$EVO_HOST  (Evolution API)"
-        else
-            item "WhatsApp" "você cadastra a sua Evolution ou UazAPI no sistema"
-        fi
+        item "WhatsApp" "https://$EVO_HOST  (Evolution API)"
         item "Ambiente" "$PAINEL"
         fechar_bloco
         sim_nao "Está tudo certo? S = instalar  •  N = corrigir" S && return 0
@@ -784,7 +761,7 @@ instalar_docker() {
 ## ============================================================================
 
 VARS_SALVAS=(MODO_DEPLOY MODO_ROTA PAINEL TRAEFIK_RESOLVER TRAEFIK_ENTRYPOINT TRAEFIK_REDE TRAEFIK_LABEL_REDE
-    TRAEFIK_PASTA_ARQUIVOS PORTA_APP PORTA_EVO PORTA_S3 APP_HOST S3_HOST EVO_HOST COM_EVOLUTION
+    TRAEFIK_PASTA_ARQUIVOS PORTA_APP PORTA_EVO PORTA_S3 DOMINIO APP_HOST S3_HOST EVO_HOST COM_EVOLUTION
     APP_KEY POSTGRES_PASSWORD MINIO_ROOT_USER MINIO_ROOT_PASSWORD EVOLUTION_API_KEY)
 
 salvar_config() {
@@ -1264,14 +1241,17 @@ instalar() {
 
 menu_instalacao_existente() {
     carregar_config
-    COM_EVOLUTION="${COM_EVOLUTION:-0}"
+    ## A Evolution vai sempre junto (instalações antigas sem ela ganham na atualização)
+    COM_EVOLUTION=1
+    EVO_HOST="${EVO_HOST:-evo.${DOMINIO:-${APP_HOST#*.}}}"
     ## Instalação que parou no meio (ex.: sem internet): continua com as mesmas respostas e senhas
     if ! command -v docker >/dev/null 2>&1 || [ -z "$(container_de maturador-app 2>/dev/null)" ]; then
         banner
         titulo_caixa "VAMOS CONTINUAR A INSTALAÇÃO"
         dica "https://${APP_HOST:-?}  •  as respostas anteriores foram mantidas"
         echo ""
-        sim_nao "Continuar?" S || exit 0
+        ## N = responder de novo (as senhas geradas continuam as mesmas)
+        sim_nao "Continuar com essas respostas?" S || return 0
         cabecalho_instalacao
         instalar_docker
         instalar
@@ -1305,9 +1285,10 @@ main() {
     banner
     titulo_caixa "BEM-VINDO! VAMOS INSTALAR O MATURADOR"
     echo ""
-    texto "São ${negrito}$TOTAL_PASSOS passos${reset} rápidos. Tenha em mãos o painel do seu domínio."
+    texto "É só ${negrito}uma pergunta${reset}: o seu domínio. Tenha em mãos o painel dele."
     echo ""
     info "Analisando a VPS..."
+    COM_EVOLUTION=1
     detectar_ambiente
     descrever_ambiente
     sleep 2

@@ -681,33 +681,16 @@ verificar_dns() {
     done
 }
 
+## Com os domínios conferidos, a instalação começa direto (sem tela de confirmação)
 assistente() {
     local passos=(passo_dominio)
-    local i
-    while :; do
-        i=0
-        while [ $i -lt ${#passos[@]} ]; do
-            if ${passos[$i]}; then
-                i=$((i + 1))
-            else
-                [ $i -gt 0 ] && i=$((i - 1))
-            fi
-        done
-
-        banner
-        trilha $((TOTAL_PASSOS + 1))
-        echo ""
-        titulo_caixa "CONFIRA OS DADOS"
-        echo ""
-        abrir_bloco "O QUE VAI SER INSTALADO" "$azul"
-        item "Sistema" "https://$APP_HOST"
-        item "Arquivos" "https://$S3_HOST"
-        item "WhatsApp" "https://$EVO_HOST  (Evolution API)"
-        item "Ambiente" "$PAINEL"
-        fechar_bloco
-        sim_nao "Está tudo certo? S = instalar  •  N = corrigir" S && return 0
-        dica "Vamos refazer. Aperte Enter nas respostas que já estão certas."
-        sleep 2
+    local i=0
+    while [ $i -lt ${#passos[@]} ]; do
+        if ${passos[$i]}; then
+            i=$((i + 1))
+        else
+            [ $i -gt 0 ] && i=$((i - 1))
+        fi
     done
 }
 

@@ -596,14 +596,16 @@ descrever_ambiente() {
 ## ASSISTENTE (PERGUNTAS)
 ## ============================================================================
 
-## Deixa só o domínio: tira http(s)://, www., caminho, porta, espaços e ponto no fim
+## Deixa só o domínio: tira http(s)://, www., caminho, porta, espaços e sujeira (vírgula, ponto no fim...)
+## O https:// é colocado sozinho em todos os endereços do sistema
 ## Ex.: "HTTPS://www.App.SuaEmpresa.com.br/login" → "app.suaempresa.com.br"
 normalizar_dominio() {
     local d
     d="$(limpar "$1")"
     d="${d,,}"
     d="${d// /}"
-    d="$(printf '%s' "$d" | sed -E 's#^[a-z]+:/*##; s#^[^@/]*@##; s#[/?\#].*$##; s#:[0-9]*$##; s#\.+$##; s#^(www\.)+##')"
+    d="${d//\\//}"
+    d="$(printf '%s' "$d" | sed -E 's#^(https?|wss?|ftp)(:/*|/+)##; s#^[a-z]+://*##; s#^[^@/]*@##; s#[/?\#].*$##; s#:[0-9]*$##; s#[^a-z0-9.-]##g; s#^[.-]+##; s#[.-]+$##; s#^(www\.)+##')"
     printf '%s' "$d"
 }
 

@@ -20,8 +20,10 @@ Rodar de novo **atualiza** o sistema. As respostas e senhas ficam em `/opt/matur
    | Traefik (Portainer, EasyPanel, Coolify, Dokploy...) | Usa o Traefik que já existe (labels ou arquivo de rotas), em stack no Swarm ou compose |
    | Outro proxy nas portas 80/443 (nginx...) | Sobe em portas locais e mostra o que cadastrar no painel |
 
-2. **Pergunta o domínio** (ex.: `suaempresa.com.br`) e monta os endereços: `maturador.<domínio>` (sistema),
-   `s3.<domínio>` (arquivos) e `evo.<domínio>` (Evolution). Confere se o DNS já aponta para a VPS.
+2. **Pergunta o domínio** (ex.: `suaempresa.com.br`) e se quer os subdomínios padrão: `app.<domínio>` (sistema),
+   `s3.<domínio>` (MinIO) e `wpp.<domínio>` (Evolution). Respondendo **não**, escolhe cada um (ex.: `maturador`
+   → `maturador.<domínio>`), e todo o resto (rotas, `APP_URL`, S3, Evolution, link final) usa o que foi escolhido.
+   Confere se o DNS já aponta para a VPS.
 3. **Instala a Evolution API** junto, usando o mesmo Postgres (banco `evolution`) e o mesmo Redis. Ela já entra
    no sistema como servidor de API (variáveis `EVOLUTION_URL`/`EVOLUTION_API_KEY`).
 4. **Sobe tudo** em `/opt/maturador/maturador.yml`: sistema, Postgres 17, Redis 7 e MinIO, com senhas e `APP_KEY`

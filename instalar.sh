@@ -597,7 +597,7 @@ descrever_ambiente() {
 ## ============================================================================
 
 ## Deixa só o domínio: tira http(s)://, www., caminho, porta, espaços e ponto no fim
-## Ex.: "HTTPS://www.Maturador.SuaEmpresa.com.br/login" → "maturador.suaempresa.com.br"
+## Ex.: "HTTPS://www.App.SuaEmpresa.com.br/login" → "app.suaempresa.com.br"
 normalizar_dominio() {
     local d
     d="$(limpar "$1")"
@@ -630,9 +630,21 @@ passo_dominio() {
             enter
             continue
         fi
-        APP_HOST="maturador.$DOMINIO"
-        S3_HOST="s3.$DOMINIO"
-        EVO_HOST="evo.$DOMINIO"
+        echo ""
+        texto "Subdomínios padrão:"
+        dica "  app.$DOMINIO (sistema)  •  s3.$DOMINIO (arquivos)  •  wpp.$DOMINIO (WhatsApp)"
+        echo ""
+        local r=0
+        sim_nao "Usar os subdomínios padrão?" S || r=$?
+        case "$r" in
+            0)
+                APP_HOST="app.$DOMINIO"
+                S3_HOST="s3.$DOMINIO"
+                EVO_HOST="wpp.$DOMINIO"
+                ;;
+            1) escolher_subdominios || continue ;;
+            *) continue ;;
+        esac
         echo ""
         abrir_bloco "ENDEREÇOS QUE PRECISAM APONTAR PARA ESTA VPS" "$azul"
         item "Sistema" "$APP_HOST"
@@ -640,6 +652,51 @@ passo_dominio() {
         item "WhatsApp" "$EVO_HOST"
         fechar_bloco
         verificar_dns && return 0
+    done
+}
+
+## Subdomínio digitado → endereço completo ("maturador" → "maturador.suaempresa.com.br")
+montar_host() {
+    local h
+    h="$(normalizar_dominio "$1")"
+    h="${h%.$DOMINIO}"
+    [ "$h" = "$DOMINIO" ] && return 1
+    [[ "$h" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*$ ]] || return 1
+    printf '%s' "$h.$DOMINIO"
+}
+
+## pedir_subdominio VAR "texto" padrão → 1 = voltar (0)
+pedir_subdominio() {
+    local __var="$1" __texto="$2" __padrao="$3" __s __h
+    while :; do
+        perguntar __s "$__texto" "$__padrao" || return 1
+        if __h="$(montar_host "$__s")"; then
+            printf -v "$__var" '%s' "$__h"
+            return 0
+        fi
+        falha "Subdomínio inválido: $__s  (use só letras, números e hífen, ex.: maturador)"
+    done
+}
+
+## Retorna 0 = escolheu os três, 1 = voltar para o domínio
+escolher_subdominios() {
+    local app s3 evo
+    while :; do
+        echo ""
+        texto "Digite só o começo de cada endereço ${cinza}(o .$DOMINIO entra sozinho)${reset}"
+        dica "Exemplo: maturador → maturador.$DOMINIO   •   0 para voltar"
+        echo ""
+        pedir_subdominio app "Sistema" "app" || return 1
+        pedir_subdominio s3 "Arquivos (S3)" "s3" || return 1
+        pedir_subdominio evo "WhatsApp (Evolution)" "wpp" || return 1
+        if [ "$app" = "$s3" ] || [ "$app" = "$evo" ] || [ "$s3" = "$evo" ]; then
+            falha "Cada endereço precisa ser diferente."
+            continue
+        fi
+        APP_HOST="$app"
+        S3_HOST="$s3"
+        EVO_HOST="$evo"
+        return 0
     done
 }
 
@@ -1214,7 +1271,7 @@ menu_instalacao_existente() {
     carregar_config
     ## A Evolution vai sempre junto (instalações antigas sem ela ganham na atualização)
     COM_EVOLUTION=1
-    EVO_HOST="${EVO_HOST:-evo.${DOMINIO:-${APP_HOST#*.}}}"
+    EVO_HOST="${EVO_HOST:-wpp.${DOMINIO:-${APP_HOST#*.}}}"
     ## Instalação que parou no meio (ex.: sem internet): continua com as mesmas respostas e senhas
     if ! command -v docker >/dev/null 2>&1 || [ -z "$(container_de maturador-app 2>/dev/null)" ]; then
         banner
